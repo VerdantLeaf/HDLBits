@@ -103,3 +103,26 @@ module top_module(
 
 endmodule
 
+// Vector4:
+// Replication operation: {num{vector}}
+module top_module (
+    input [7:0] in,
+    output [31:0] out );
+
+    // assign out = { replicate-sign-bit , the-input };
+    assign out = {{25{in[7]}}, in[6:0]};
+    // Note that replication requires two sets of brackets
+
+endmodule
+
+// Vector5:
+module top_module (
+    input a, b, c, d, e,
+    output [24:0] out );
+    
+    // The output is XNOR of two vectors created by 
+    // concatenating and replicating the five inputs.
+    // assign out = ~{ ... } ^ { ... };
+    assign out = ~{ {5{a}}, {5{b}}, {5{c}}, {5{d}}, {5{e}} } ^ { {5{a, b, c, d, e}} };
+
+endmodule
