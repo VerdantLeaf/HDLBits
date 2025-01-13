@@ -98,3 +98,75 @@ module top_module(
 endmodule
 
 // Module fadd:
+module top_module (
+    input [31:0] a,
+    input [31:0] b,
+    output [31:0] sum
+);
+    // Top module should be the exact same code
+    wire carry;
+    add16 lowerAdder(.a(a[15:0]), .b(b[15:0]), .cin(0), .cout(carry), .sum(sum[15:0]));
+    add16 upperAdder(.a(a[31:16]), .b(b[31:16]), .cin(carry), .cout(0), .sum(sum[31:16]));
+
+endmodule
+
+module add1 ( input a, input b, input cin,   output sum, output cout );
+
+// Full adder module here
+    // This is the addition operator and we use the concatenation operator to differentiate the 
+    // lower and upper sum and cout bits respectively.
+    assign {cout, sum} = a + b + cin;
+    
+
+endmodule
+
+// Module cseladd:
+module top_module(
+    input [31:0] a,
+    input [31:0] b,
+    output [31:0] sum
+);
+    
+    wire [15:0] sumCarryZero, sumCarryOne; // This declares both as 16 bit vectors
+    wire carrySel;
+    
+    // The same, except cout runs to carrySel
+    add16 lowerAdder(.a(a[15:0]), .b(b[15:0]), .cin(0), .cout(carrySel), .sum(sum[15:0]));
+    // Run sum to sumCarruZero and sumCarryOne
+    add16 upperAdder0(.a(a[31:16]), .b(b[31:16]), .cin(0), .cout(0), .sum(sumCarryZero));
+    add16 upperAdder1(.a(a[31:16]), .b(b[31:16]), .cin(1), .cout(0), .sum(sumCarryOne));
+    
+    // Build a mux
+    always @(*) begin
+        case(carrySel)
+            0 : sum[31:16] = sumCarryZero;
+            1 : sum[31:16] = sumCarryOne;
+        endcase
+    end
+
+endmodule
+
+// Module addsub - Tough one, not going to lie
+module top_module(
+    input [31:0] a,
+    input [31:0] b,
+    input sub,
+    output [31:0] sum
+);
+    
+    wire carry;
+    wire [31:0] bPosNeg;
+    
+    // This is all the same code - except changing b input source & cin
+    add16 lowerAdder(.a(a[15:0]), .b(bPosNeg[15:0]), .cin(sub), .cout(carry), .sum(sum[15:0]));
+    add16 upperAdder(.a(a[31:16]), .b(bPosNeg[31:16]), .cin(carry), .cout(0), .sum(sum[31:16]));
+    
+    // XOR gate is a selectable inverter (needed the hint for that)
+    always @(*) begin
+        case(sub)
+            0 : bPosNeg = b;
+            1 : bPosNeg = ~b;
+        endcase
+    end
+
+endmodule
