@@ -152,3 +152,91 @@ module circB ( input x, input y, output z );
 endmodule
 
 // Ringer:
+module top_module (
+    input ring,
+    input vibrate_mode,
+    output ringer,       // Make sound
+    output motor         // Vibrate
+);
+    assign ringer = ring && !vibrate_mode;
+    assign motor = ring && vibrate_mode;
+
+endmodule
+
+// Thermostat:
+module top_module (
+    input too_cold,
+    input too_hot,
+    input mode,
+    input fan_on,
+    output heater,
+    output aircon,
+    output fan
+); 
+    // Can also just do heater | aircon | fan_on;
+    assign fan = fan_on || (mode && too_cold) || (!mode && too_hot);
+    
+    assign heater = mode && too_cold;
+    assign aircon = !mode && too_hot;
+
+endmodule
+
+// Popcount3:
+module top_module( 
+    input [2:0] in,
+    output [1:0] out );
+    // This is great and I love it
+    assign out = in[2] + in[1] + in[0];
+
+endmodule
+
+// Gatesv:
+module top_module( 
+    input [3:0] in,
+    output [2:0] out_both,
+    output [3:1] out_any,
+    output [3:0] out_different );
+    
+    // And to see if the same
+    assign out_both[0] = in[1] & in[0];
+    assign out_both[1] = in[2] & in[1];
+    assign out_both[2] = in[3] & in[2];
+    
+    // Or since it can be either
+    assign out_any[1] = in[1] | in[0];
+    assign out_any[2] = in[2] | in[1];
+    assign out_any[3] = in[3] | in[2];
+    
+    // XNOR for equality
+    assign out_different[0] = (in[1] ^ in[0]); 
+    assign out_different[1] = (in[2] ^ in[1]); 
+    assign out_different[2] = (in[3] ^ in[2]); 
+    assign out_different[3] = (in[0] ^ in[3]); 
+
+    // That is not a very efficient way to do it.
+    
+    // This all because it's bitwise - which would have been smart
+    assign out_any = in[3:1] | in[2:0];
+
+	assign out_both = in[2:0] & in[3:1];
+	// Use concat to rearrange bits
+	assign out_different = in ^ {in[0], in[3:1]};
+
+endmodule
+
+// Gatesv100:
+module top_module( 
+    input [99:0] in,
+    output [98:0] out_both,
+    output [99:1] out_any,
+    output [99:0] out_different );
+
+    // Take the same architeeture and bring it over
+    assign out_both = in[98:0] & in[99:1];
+    assign out_any = in[98:0] | in[99:1];
+    assign out_different = in ^ {in[0], in[99:1]};
+    
+    // Listed soln uses in and not in[98:0], but I think
+    // it just truncates.
+
+endmodule
