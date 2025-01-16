@@ -1,3 +1,4 @@
+// Solutions for multiplexers problems
 
 // Mux2to1:
 module top_module( 
@@ -48,4 +49,27 @@ module top_module(
     end
 endmodule
 
-// 
+// Mux256to1:
+module top_module( 
+    input [255:0] in,
+    input [7:0] sel,
+    output out );
+    
+    assign out = in[sel]; // easy and simple
+
+endmodule
+
+// Mux256to1v:
+module top_module( 
+    input [1023:0] in,
+    input [7:0] sel,
+    output [3:0] out );
+
+    // Does not work: in[sel*4+3:sel*4]
+    
+    // indjexed vector part select
+    assign out = in[sel*4 +: 4];
+
+    // w[x +:y] => w{x : (x+y-1)]
+    
+endmodule
