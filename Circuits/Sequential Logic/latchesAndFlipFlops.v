@@ -154,4 +154,19 @@ module flipflopd(input clk, input d, output q);
     
 endmodule
 
-// 
+// Muxx DFF:
+module top_module (
+	input clk,
+	input L,
+	input r_in,
+	input q_in,
+	output reg Q);
+    
+    // sometimes the answer is simpler than you think    
+    always @(posedge(clk)) begin
+        if(L)
+            Q <= r_in;
+        else
+            Q <= q_in;
+    end
+endmodule
