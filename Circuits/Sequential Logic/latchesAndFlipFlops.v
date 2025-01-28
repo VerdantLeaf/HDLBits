@@ -170,3 +170,45 @@ module top_module (
             Q <= q_in;
     end
 endmodule
+
+// Mux and DFF 2
+module top_module (
+    input clk,
+    input w, R, E, L,
+    output Q
+);
+    // you need to build the internal muxes inside the FF stuff (sort of)
+    always @(posedge(clk)) begin
+        if ({E, L} == 2'b00)
+            Q <= Q;
+        else if ({E, L} == 2'b10)
+            Q <= w;
+        else 
+            Q <= R;
+    end    
+endmodule
+
+// DFF and Gates:
+module top_module (
+    input clk,
+    input x,
+    output z
+); 
+
+    wire q1, q2, q3;
+
+    
+    d_ff inst1(q1 ^ x,clk,q1);
+    d_ff inst2(~q2 & x,clk,q2);
+    d_ff inst3(~q3 | x,clk,q3);
+ 
+    assign z = ~(q1 | q2 | q3); 
+        
+endmodule
+
+module d_ff (input d, input clk, output reg q);
+    // q needs to hold it's value, therefore it has to be a reg and not a wire
+    always@(posedge clk) begin
+        q <= d;
+    end
+endmodule
