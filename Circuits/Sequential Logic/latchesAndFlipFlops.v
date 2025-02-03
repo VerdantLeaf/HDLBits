@@ -212,3 +212,74 @@ module d_ff (input d, input clk, output reg q);
         q <= d;
     end
 endmodule
+
+// Circuit from TT
+module top_module (
+    input clk,
+    input j,
+    input k,
+    output Q); 
+    
+    always @(posedge(clk)) begin
+        Q <= Q;
+        case ({j, k})
+            2'b01 : Q <= 0;
+            2'b10 : Q <= 1;
+            2'b11 : Q <= ~Q;
+        endcase
+    end
+
+endmodule
+
+// edgedetect
+module top_module (
+    input clk,
+    input [7:0] in,
+    output [7:0] pedge
+);
+
+    integer i;
+    reg [7:0]  prev_in;
+    
+    always @(posedge(clk)) begin
+        pedge = 8'h00;
+        for(i =0; i < 8; i = i+1) begin
+            if(in[i] == 1 && prev_in[i] != in[i]) begin
+                pedge[i] = 1;
+            end
+            prev_in[i] = in[i];
+        end
+    end
+    
+endmodule
+// simpler implementation:
+module top_module(
+	input clk,
+	input [7:0] in,
+	output reg [7:0] pedge);
+	
+	reg [7:0] d_last;	
+			
+	always @(posedge clk) begin
+		d_last <= in;			// Remember the state of the previous cycle
+		pedge <= in & ~d_last;	// A positive edge occurred if input was 0 and is now 1.
+	end
+	
+endmodule
+
+// edgedetect2:
+module top_module (
+    input clk,
+    input [7:0] in,
+    output [7:0] anyedge
+);
+    
+	reg [7:0] d_last;	
+			
+	always @(posedge clk) begin
+		d_last <= in;
+		anyedge <= in ^ d_last; // it's just XOR
+	end
+endmodule
+
+//
