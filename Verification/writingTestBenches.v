@@ -48,4 +48,60 @@ module top_module();
     
 endmodule
 
-//
+// Testbench2:
+module top_module();
+
+	reg clk, in, out;
+    reg[2:0] s;
+
+    always begin
+        #5 clk = ~clk;
+    end
+    
+    initial begin
+        clk = 0;
+        in = 0;
+        s = 2;
+        #10
+        s = 6;
+        #10
+        s = 2;
+        in = 1;
+        #10
+        in = 0;
+        s = 7;
+        #10
+        in = 1;
+        s = 0;
+        #30
+        in = 0;
+    end
+        
+    q7 mod_q7(.clk(clk), .in(in), .s(s), .out(out));
+    
+endmodule
+
+// T flip-flop:
+module top_module ();
+
+    reg clk, rst, t, q;
+    
+    always begin
+        #5 clk = ~clk;
+    end
+    
+    initial begin
+        clk = 0;
+        rst = 0;
+        t = 0;
+        #15
+        rst = 1;
+        #5
+        rst = 0;
+        #5
+        t = 1;
+    end
+    
+    tff tflipflop(.clk(clk), .reset(rst), .t(t), .q(q));
+    
+endmodule
