@@ -282,4 +282,41 @@ module top_module (
 	end
 endmodule
 
-//
+// edgecapture
+module top_module (
+    input clk,
+    input reset,
+    input [31:0] in,
+    output [31:0] out
+);
+    reg[31:0] in_prev;
+    
+    always @(posedge clk) begin
+        in_prev <= in;
+        if(reset)
+            out <= 0;
+        else
+            out <= out | (in_prev & ~in);
+    end
+
+endmodule
+
+// Dualedge
+module top_module (
+    input clk,
+    input d,
+    output q
+);
+    
+    reg [1:0] rg;
+    always @(posedge clk) begin
+        rg[0] <= d;
+    end
+    
+    always @(negedge clk) begin
+        rg[1] <= d;
+    end
+    
+    assign q = (clk) ? rg[0] : rg[1];
+
+endmodule
