@@ -546,4 +546,363 @@ module top_module(
     
 endmodule
 
-// PS2PacketParser:
+// FSM ps2:
+module top_module(
+    input clk,
+    input [7:0] in,
+    input reset,    // Synchronous reset
+    output done); //
+
+    parameter  [1:0] BYTE1 = 2'b00,
+    				 BYTE2 = 2'b01,
+    				 BYTE3 = 2'b10,
+    				 DONE  = 2'b11;
+
+    reg [1:0] state, next;
+
+    // State transition logic (combinational)
+    always @(*) begin
+    	case(state)
+    		BYTE1 : next = (in[3]) ? BYTE2 : BYTE1;
+    		BYTE2 : next = BYTE3;
+    		BYTE3 : next = DONE;
+    		DONE  : next = (in[3]) ? BYTE2 : BYTE1;
+    	endcase
+    end
+
+    // State flip-flops (sequential)
+    always @(posedge clk) begin
+    	if(reset) state <= BYTE1;
+    	else state <= next;
+    end
+ 
+    // Output logic
+    assign done = (state == DONE);
+
+
+endmodule
+
+// Fsm ps2data:
+module top_module(
+    input clk,
+    input [7:0] in,
+    input reset,    // Synchronous reset
+    output [23:0] out_bytes,
+    output done); //
+
+    parameter [1:0]  BYTE1 = 2'b00,
+    				 BYTE2 = 2'b01,
+    				 BYTE3 = 2'b10,
+    				 DONE  = 2'b11;
+
+    reg [1:0] state, next;
+    reg [23:0] data;
+
+    // State transition logic (combinational)
+    always @(*) begin
+    	case(state)
+    		BYTE1 : next = (in[3]) ? BYTE2 : BYTE1;
+    		BYTE2 : next = BYTE3;
+    		BYTE3 : next = DONE;
+    		DONE  : next = (in[3]) ? BYTE2 : BYTE1;
+    	endcase
+    end
+
+    // State flip-flops (sequential)
+    always @(posedge clk) begin
+    	if(reset) state <= BYTE1;
+    	else state <= next;
+    end
+ 
+    // New: Datapath to store incoming bytes.
+    always @(posedge clk) begin
+    	if (reset) data <= 24'b0;
+    	else data <= {data[15:8], data[7:0], in};
+    end
+    
+    // Output logic
+    assign done = (state == DONE);
+    assign out_bytes = (done) ? data : 23'b0;
+
+endmodule
+
+// fsm_serial:
+module top_module(
+    input clk,
+    input in,
+    input reset,    // Synchronous reset
+    output done
+); 
+    parameter [2:0]  IDLE 	 = 3'b000,
+					 START 	 = 3'b001,
+					 RECEIVE = 3'b010,
+					 WAIT	 = 3'b011,
+					 STOP    = 3'b100;
+    
+	reg [2:0] state, next;
+	reg [3:0] i;
+
+	always @(*) begin
+		case(state)
+			IDLE  : next = (in) ? IDLE : START;
+			START : next = RECEIVE;
+			RECEIVE : begin
+				if (i == 8) begin
+					if (in) next = STOP;
+					else next = WAIT;
+				end 
+				else next = RECEIVE;			
+			end
+			WAIT : next = (in) ? IDLE : WAIT;
+			STOP : next = (in) ? IDLE : START;
+		endcase
+	end
+
+	always @(posedge clk) begin
+		if(reset) state <= IDLE;
+		else state <= next;
+	end
+
+	always @(posedge clk) begin
+		if (reset) begin
+			done <= 0;
+			i <= 0;
+		end
+		else begin
+			case(next) 
+				RECEIVE : begin
+					done <= 0;
+					i = i + 1;
+				end
+				STOP : begin
+					done <= 1;
+					i <= 0;
+				end
+				default : begin
+					done <= 0;
+					i <= 0;
+				end
+			endcase
+		end
+	end
+
+    
+
+endmodule
+
+// fsm_serialdata:
+module top_module(
+    input clk,
+    input in,
+    input reset,    // Synchronous reset
+    output [7:0] out_byte,
+    output done
+); //
+
+     // Use FSM from Fsm_serial
+    parameter [2:0]  IDLE 	 = 3'b000,
+					 START 	 = 3'b001,
+					 RECEIVE = 3'b010,
+					 WAIT	 = 3'b011,
+					 STOP    = 3'b100;
+
+	reg [2:0] state, next;
+	reg [3:0] i;
+	reg [7:0] out;
+
+	always @(*) begin
+		case(state)
+			IDLE  : next = (in) ? IDLE : START;
+			START : next = RECEIVE;
+			RECEIVE : begin
+				if (i == 8) begin
+					if (in) next = STOP;
+					else next = WAIT;
+				end 
+				else next = RECEIVE;			
+			end
+			WAIT : next = (in) ? IDLE : WAIT;
+			STOP : next = (in) ? IDLE : START;
+		endcase
+	end
+
+	always @(posedge clk) begin
+		if(reset) state <= IDLE;
+		else state <= next;
+	end
+
+	always @(posedge clk) begin
+		if (reset) begin
+			done <= 0;
+			i <= 0;
+		end
+		else begin
+			case(next) 
+				RECEIVE : begin
+					done <= 0;
+					i = i + 4'h1;
+				end
+				STOP : begin
+					done <= 1;
+					i <= 0;
+				end
+				default : begin
+					done <= 0;
+					i <= 0;
+				end
+			endcase
+		end
+	end
+
+    // New: Datapath to latch input bits.
+    always @(posedge clk) begin
+    	if (reset) out <= 0;
+    	else if (next == RECEIVE)
+    		out[i] <= in;
+    end
+
+    assign out_byte = (done) ? out : 8'b0;
+
+endmodule
+
+// fsm_serialdp - ty to github folks for these. They were a bit challenging
+module top_module(
+    input clk,
+    input in,
+    input reset,    // Synchronous reset
+    output [7:0] out_byte,
+    output done
+); //
+
+    // Use FSM from Fsm_serial
+    parameter [2:0]  IDLE 	 = 3'b000,
+					 START 	 = 3'b001,
+					 RECEIVE = 3'b010,
+					 WAIT	 = 3'b011,
+					 STOP    = 3'b100,
+					 CHECK   = 3'b101;
+
+	reg [2:0] state, next;
+	reg [3:0] i;
+	reg [7:0] out;
+	reg odd_reset;
+	reg odd_reg;
+	wire odd;	
+	
+
+	always @(*) begin
+		case(state)
+			IDLE  	: next = (in) ? IDLE : START;
+			START 	: next = RECEIVE;
+			RECEIVE : next = (i == 8) ? CHECK : RECEIVE;
+			CHECK 	: next = (in) ? STOP : WAIT;
+			WAIT 	: next = (in) ? IDLE : WAIT;
+			STOP 	: next = (in) ? IDLE : START;
+		endcase
+	end
+
+	always @(posedge clk) begin
+		if(reset) state <= IDLE;
+		else state <= next;
+	end
+
+	always @(posedge clk) begin
+		if (reset) begin
+			i <= 0;
+		end
+		else begin
+			case(next) 
+				RECEIVE : begin
+					i = i + 4'h1;
+				end
+				STOP : begin
+					i <= 0;
+				end
+				default : begin
+					i <= 0;
+				end
+			endcase
+		end
+	end
+
+    // New: Datapath to latch input bits.
+    always @(posedge clk) begin
+    	if (reset) out <= 0;
+    	else if (next == RECEIVE)
+    		out[i] <= in;
+    end
+
+    // New: Add parity checking.
+    parity u_parity(
+        .clk(clk),
+        .reset(reset | odd_reset),
+        .in(in),
+        .odd(odd));  
+
+    always @(posedge clk) begin
+    	if(reset) odd_reg <= 0;
+    	else odd_reg <= odd; 
+    end
+
+    always @(posedge clk) begin
+		case(next)
+			IDLE : odd_reset <= 1;	
+			STOP : odd_reset <= 1;
+			default : odd_reset <= 0;
+		endcase
+    end
+
+    assign done = ((state == STOP) && odd_reg);
+    assign out_byte = (done) ? out : 8'b0;
+endmodule
+
+// fsm hdlc:
+module top_module(
+    input clk,
+    input reset,    // Synchronous reset
+    input in,
+    output disc,
+    output flag,
+    output err);
+
+    parameter [3:0]  NONE = 0,
+					 ONE  = 1,
+					 TWO  = 2,
+					 THREE= 3,
+					 FOUR = 4,
+					 FIVE = 5,
+					 SIX  = 6,
+					 DISC = 7,
+					 FLAG = 8,
+					 ERR  = 9;
+
+    reg [3:0] state, next;
+    
+    always @(*) begin
+        case(state)
+            NONE : next = (in) ? ONE   : NONE;
+			ONE	 : next = (in) ? TWO   : NONE;
+			TWO	 : next = (in) ? THREE : NONE;
+			THREE: next = (in) ? FOUR  : NONE;
+			FOUR : next = (in) ? FIVE  : NONE;
+			FIVE : next = (in) ? SIX   : DISC;
+			SIX	 : next = (in) ? ERR   : FLAG;
+			DISC : next = (in) ? ONE   : NONE;
+			FLAG : next = (in) ? ONE   : NONE;
+			ERR  : next = (in) ? ERR   : NONE;
+        endcase
+    end
+    
+    always @(posedge clk) begin
+		if (reset)
+			state <= NONE;
+		else 
+			state <= next;
+	end
+
+	assign disc = (state == DISC);
+	assign flag = (state == FLAG);
+	assign err = (state == ERR);
+    
+endmodule
+
