@@ -295,6 +295,255 @@ module top_module (
 			default : {fr3, fr2, fr1, dfr} = 4'bxxxx;
 		endcase
 	end
+endmodule
 
+// Lemmings1:
+module top_module(
+    input clk,
+    input areset,    // Freshly brainwashed Lemmings walk left.
+    input bump_left,
+    input bump_right,
+    output walk_left,
+    output walk_right); //  
+
+    parameter LEFT = 0, RIGHT = 1;
+    reg state, next_state;
+
+    always @(*) begin
+        // State transition logic
+        case(state)
+            LEFT : next_state = (bump_left) ? RIGHT : LEFT;
+            RIGHT : next_state = (bump_right) ? LEFT : RIGHT;
+        endcase
+    end
+
+    always @(posedge clk, posedge areset) begin
+        // State flip-flops with asynchronous reset
+        if(areset) state <= LEFT;
+        else state <= next_state;
+    end
+
+    // Output logic
+    assign walk_left = (state == LEFT);
+    assign walk_right = (state == RIGHT);
 
 endmodule
+
+// Lemmings2:
+module top_module(
+    input clk,
+    input areset,    // Freshly brainwashed Lemmings walk left.
+    input bump_left,
+    input bump_right,
+    input ground,
+    output walk_left,
+    output walk_right,
+    output aaah ); 
+
+    
+    parameter [1:0] L_WALK = 2'b00, R_WALK = 2'b01, L_FALL = 2'b10, R_FALL = 2'b11;
+    reg [1:0] state, next;
+    
+    always @(*) begin
+        // State transition logic
+        case(state)
+            L_WALK : next = (ground == 0) ? L_FALL : ((bump_left == 1) ? R_WALK : L_WALK); 
+            L_FALL : next = (ground == 1) ? L_WALK : L_FALL;
+            R_WALK : next = (ground == 0) ? R_FALL : ((bump_right == 1) ? L_WALK : R_WALK);
+            R_FALL : next = (ground == 1) ? R_WALK : R_FALL;
+        endcase
+    end
+
+    always @(posedge clk or posedge areset) begin
+        // State flip-flops with asynchronous reset
+        if(areset) state <= L_WALK;
+        else state <= next;
+    end
+    // Output logic
+    assign walk_left = (state == L_WALK);
+    assign walk_right = (state == R_WALK);
+    assign aaah = ((state == R_FALL) || (state == L_FALL));
+    
+endmodule
+
+// Lemmings3:
+module top_module(
+    input clk,
+    input areset,    // Freshly brainwashed Lemmings walk left.
+    input bump_left,
+    input bump_right,
+    input ground,
+    input dig,
+    output walk_left,
+    output walk_right,
+    output aaah,
+    output digging ); 
+    
+    // 6 states so we need 3 bits for all of the states
+    parameter [2:0] L_WALK = 3'b000,
+     				R_WALK = 3'b001,
+    				L_FALL = 3'b010,
+     				R_FALL = 3'b011,
+    				L_DIG  = 3'b100,
+     				R_DIG  = 3'b101;
+    
+    reg [2:0] state, next;
+    
+    always @(posedge clk or posedge areset) begin
+        if(areset) state <= L_WALK;
+        else state <= next;
+    end
+            
+    always @(*) begin
+        case(state)
+            L_WALK : begin
+                if(!ground) next = L_FALL;
+                else begin
+                    if(dig) next = L_DIG;
+                    else begin
+                        if(bump_left) next = R_WALK;
+                        else next = L_WALK;
+                    end
+                end
+            end
+            R_WALK : begin
+                 if(!ground) next = R_FALL;
+                else begin
+                    if(dig) next = R_DIG;
+                    else begin
+                        if(bump_right) next = L_WALK;
+                        else next = R_WALK;
+                    end
+                end
+            end
+            L_FALL : next = (ground) ? L_WALK : L_FALL;
+            R_FALL : next = (ground) ? R_WALK : R_FALL;
+            L_DIG  : next = (ground) ? L_DIG : L_FALL;
+            R_DIG  : next = (ground) ? R_DIG : R_FALL;
+        endcase        
+    end
+    
+    assign walk_left = (state == L_WALK);
+    assign walk_right = (state == R_WALK);
+    assign aaah = ((state == L_FALL) || (state == R_FALL));
+    assign digging = ((state == L_DIG) || (state == R_DIG));
+            
+endmodule
+
+// Lemmings4:
+module top_module(
+    input clk,
+    input areset,    // Freshly brainwashed Lemmings walk left.
+    input bump_left,
+    input bump_right,
+    input ground,
+    input dig,
+    output walk_left,
+    output walk_right,
+    output aaah,
+    output digging ); 
+    
+    // 7 states so we need 3 bits for all of the states
+    parameter [2:0] L_WALK = 3'b000,
+     				R_WALK = 3'b001,
+    				L_FALL = 3'b010,
+     				R_FALL = 3'b011,
+    				L_DIG  = 3'b100,
+     				R_DIG  = 3'b101,
+    				SPLATTER = 3'b110;
+    
+    reg [2:0] state, next;
+    reg [6:0] count;
+    
+    always @(posedge clk or posedge areset) begin
+        if(areset) state <= L_WALK;
+        else if(state == R_FALL || state == L_FALL) begin
+            count <= count + 1;
+            state <= next;
+        end
+        else begin
+            state <= next;
+            count <= 0;
+        end
+    end
+            
+    always @(*) begin
+        case(state)
+            L_WALK : begin
+                if(!ground) next = L_FALL;
+                else begin
+                    if(dig) next = L_DIG;
+                    else begin
+                        if(bump_left) next = R_WALK;
+                        else next = L_WALK;
+                    end
+                end
+            end
+            R_WALK : begin
+                 if(!ground) next = R_FALL;
+                else begin
+                    if(dig) next = R_DIG;
+                    else begin
+                        if(bump_right) next = L_WALK;
+                        else next = R_WALK;
+                    end
+                end
+            end
+            L_FALL : begin
+                if(ground) begin
+                    if(count > 19) next = SPLATTER;
+                    else next = L_WALK;
+                end
+                else next = L_FALL;
+            end
+            R_FALL : begin
+                if(ground) begin
+                    if(count > 19) next = SPLATTER;
+                    else next = R_WALK;
+                end
+                else next = R_FALL;
+            end
+            L_DIG  : next = (ground) ? L_DIG : L_FALL;
+            R_DIG  : next = (ground) ? R_DIG : R_FALL;
+            SPLATTER : next = SPLATTER;
+        endcase        
+    end
+    
+    assign walk_left = (state == L_WALK);
+    assign walk_right = (state == R_WALK);
+    assign aaah = ((state == L_FALL) || (state == R_FALL));
+    assign digging = ((state == L_DIG) || (state == R_DIG));
+            
+endmodule
+
+// OneHotFSM:
+module top_module(
+    input in,
+    input [9:0] state,
+    output [9:0] next_state,
+    output out1,
+    output out2);
+
+    localparam  S0 = 0, S1 = 1, S2 = 2, S3 = 3, S4 = 4,
+				S5 = 5, S6 = 6, S7 = 7, S8 = 8, S9 = 9;
+
+	//states
+	assign next_state[S0] = (state[S0] & !in) | (state[S1] & !in) | (state[S2] & !in) | (state[S3] & !in) | 
+							(state[S4] & !in) | (state[S7] & !in) | (state[S8] & !in) | (state[S9] & !in);
+	assign next_state[S1] = (state[S0] & in) | (state[S8] & in) | (state[S9] & in);
+	assign next_state[S2] = state[S1] & in;
+	assign next_state[S3] = state[S2] & in;
+	assign next_state[S4] = state[S3] & in;
+	assign next_state[S5] = state[S4] & in;
+	assign next_state[S6] = state[S5] & in;
+	assign next_state[S7] = (state[S6] & in) | (state[7] & in);
+	assign next_state[S8] = state[S5] & !in;
+	assign next_state[S9] = state[S6] & !in;
+
+	//output
+	assign out1 = state[8] | state[9];
+	assign out2 = state[7] | state[9];
+    
+endmodule
+
+// PS2PacketParser:
