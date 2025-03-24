@@ -906,3 +906,127 @@ module top_module(
     
 endmodule
 
+// Mealy FSM:
+module top_module (
+    input clk,
+    input aresetn,    // Asynchronous active-low reset
+    input x,
+    output z ); 
+
+	localparam [1:0] IDLE     = 0,
+					 ONE      = 1,
+					 ONE_ZERO = 2;
+
+	reg [1:0] state, next;
+
+	always @(*) begin
+		case (state)
+			IDLE : begin 
+				next = (x) ? ONE : IDLE;
+				z = 0;
+			end
+			ONE : begin
+				next = (x) ? ONE : ONE_ZERO;
+				z = 0;
+			end
+			ONE_ZERO : begin
+				if (x) begin
+					next = ONE;
+					z = 1;
+				end
+				else begin
+					next = IDLE;
+					z = 0;
+				end
+			end
+		endcase
+	end
+
+	always @(posedge clk or negedge aresetn) begin
+		if (~aresetn) state <= IDLE;
+		else state <= next;
+	end
+
+endmodule
+
+// Moore 2's compliment:
+module top_module (
+    input clk,
+    input areset,
+    input x,
+    output z
+); 
+    
+    parameter A=2'b00, B=2'b01, C=2'b10;
+    reg [1:0] state, state_next;
+    
+    always @(posedge clk or posedge areset)
+        begin
+            if (areset)
+            state <= A;
+    		else
+            state <= state_next;
+    	end
+    
+    always @(*)
+        begin
+            case (state)
+                A: begin
+                    if (x) state_next <= B;
+                    else   state_next <= A;
+                end
+                B: begin
+                    if (x) state_next <= C;
+                    else   state_next <= B;
+                end
+                C: begin
+                    if (x) state_next <= C;
+                    else   state_next <= B;
+                end
+                default:   state_next <= A;
+            endcase
+        end
+    
+    assign z = (state == B);
+        
+endmodule
+
+// Mealy's Two's Compliment:
+module top_module (
+    input clk,
+    input areset,
+    input x,
+    output z
+  ); 
+
+	localparam [1:0] A = 2'b01,
+					 B = 2'b10;
+
+	reg [1:0] state, next;
+
+	always @(*) begin
+		case (state) 
+			A : begin
+				if (x) begin
+					next = B;
+					z =1;
+				end
+				else begin
+					next = A;
+					z = 0;
+				end
+			end
+			B : begin
+				next = B;
+                z = (x) ? 1'b0 : 1'b1;
+			end
+		endcase
+	end
+
+	always @(posedge clk or posedge areset) begin
+		if (areset) state <= A;
+		else state <= next;
+	end
+endmodule
+
+// q3 FSM
