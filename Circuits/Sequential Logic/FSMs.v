@@ -1,3 +1,6 @@
+// Easily my least favorite section of HDL bits, just due to repetition
+// Github folks saved me on a lot of these
+
 // fsm1:
 module top_module(
     input clk,
@@ -1029,4 +1032,385 @@ module top_module (
 	end
 endmodule
 
-// q3 FSM
+// q3a FSM:
+module top_module (
+    input clk,
+    input reset,   // Synchronous reset
+    input s,
+    input w,
+    output z
+);
+parameter A = 0, B = 1;
+
+ reg state, next;
+    reg [1:0] count;
+    reg [1:0] count1;
+
+    always @(*) begin
+  		case(state)
+   			A : next = (s) ? B : A;
+   			B : next = B;
+  endcase
+ end
+
+ always @(posedge clk) begin
+  if (reset) begin
+   state <= A;
+            count=0;
+            count1=0;
+  end
+  else begin 
+      state <= next;
+        
+        if(state==B)
+            begin
+                if(count1==3)begin
+                    count=0;
+                    count1=0;
+                end
+                if(w==1) count=count+1;
+                
+                    count1=count1+1;
+             end
+    end
+ end    
+
+    assign z = ((count == 2) & (count1 == 3) );
+endmodule
+
+// Q3b FSM:
+module top_module (
+    input clk,
+    input reset,   // Synchronous reset
+    input x,
+    output z
+  );
+
+    parameter a = 0, b = 1, c = 2, d = 3, e = 4;
+    reg [2:0] state, next_state;
+
+    always @(*) begin
+        case (state)
+            a: next_state = x ? b : a;
+            b: next_state = x ? e : b;
+            c: next_state = x ? b : c;
+            d: next_state = x ? c : b;
+            e: next_state = x ? e : d;
+        endcase
+    end
+
+    always @(posedge clk) begin
+        if (reset) begin
+            state <= a;
+        end
+        else begin
+            state <= next_state;
+        end
+    end
+
+    assign z = (state == d || state == e);
+
+endmodule
+
+// Q3c FSM logic:
+module top_module (
+    input clk,
+    input [2:0] y,
+    input x,
+    output Y0,
+    output z
+  );
+
+    reg [2:0] Y;
+    
+    always@(*) begin
+        case({y, x})
+            4'b0000:    Y = 3'b000;
+            4'b0001:    Y = 3'b001;
+            4'b0010:    Y = 3'b001;
+            4'b0011:    Y = 3'b100;
+            4'b0100:    Y = 3'b010;
+            4'b0101:    Y = 3'b001;
+            4'b0110:    Y = 3'b001;
+            4'b0111:    Y = 3'b010;
+            4'b1000:    Y = 3'b011;
+            4'b1001:    Y = 3'b100;
+        endcase
+    end
+    
+    assign  z = (y == 3'b011 || y == 3'b100);
+    assign Y0 = Y[0];
+
+endmodule
+
+// Q6b FSM next state logic
+module top_module (
+    input [3:1] y,
+    input w,
+    output Y2
+  );
+
+    reg [3:1] Y;
+    
+    always @(*) begin
+        case({y, w})
+            4'b0000: Y = 3'b001;
+            4'b0001: Y = 3'b000;
+            4'b0010: Y = 3'b010;
+            4'b0011: Y = 3'b011;
+            4'b0100: Y = 3'b100;
+            4'b0101: Y = 3'b011;
+            4'b0110: Y = 3'b101;
+            4'b0111: Y = 3'b000;
+            4'b1000: Y = 3'b100;
+            4'b1001: Y = 3'b011;
+            4'b1010: Y = 3'b010;
+            4'b1011: Y = 3'b011;
+        endcase
+    end
+    
+    assign Y2 = Y[2];
+
+endmodule
+
+// Q6c FSM one hot next state logic:
+module top_module (
+    input [6:1] y,
+    input w,
+    output Y2,
+    output Y4
+  );
+
+    assign Y2 = y[1] & (~w);
+    assign Y4 = (y[2] & w) | (y[3] & w) | (y[5] & w) | (y[6] & w);
+
+endmodule
+
+// Q6 FSM
+module top_module (
+    input clk,
+    input reset,     // synchronous reset
+    input w,
+    output z
+  );
+
+    parameter a=3'b000, b=3'b001, c=3'b010, d=3'b011, e=3'b100, f=3'b101;
+    reg [2:0] state, next_state;
+    
+    always@(*) begin
+        case({state, w})
+            {a, 1'b0}:  next_state = b;
+            {a, 1'b1}:  next_state = a;
+            {b, 1'b0}:  next_state = c;
+            {b, 1'b1}:  next_state = d;
+            {c, 1'b0}:  next_state = e;
+            {c, 1'b1}:  next_state = d;
+            {d, 1'b0}:  next_state = f;
+            {d, 1'b1}:  next_state = a;
+            {e, 1'b0}:  next_state = e;
+            {e, 1'b1}:  next_state = d;
+            {f, 1'b0}:  next_state = c;
+            {f, 1'b1}:  next_state = d;
+            default  :  next_state = a;
+        endcase
+    end
+    
+    always@(posedge clk) begin
+        if(reset)
+            state <= a;
+        else
+            state <= next_state;
+    end
+    
+    assign z = (state == e || state == f);
+    
+endmodule
+
+// Q2a FSM:
+module top_module (
+    input clk,
+    input reset,     // synchronous reset
+    input w,
+    output z
+  );
+
+    parameter a=3'b000, b=3'b001, c=3'b010, d=3'b011, e=3'b100, f=3'b101;
+    reg [2:0] state, next_state;
+    
+    always@(*) begin
+        case({state, w})
+            {a, 1'b0}:  next_state = a;
+            {a, 1'b1}:  next_state = b;
+            {b, 1'b0}:  next_state = d;
+            {b, 1'b1}:  next_state = c;
+            {c, 1'b0}:  next_state = d;
+            {c, 1'b1}:  next_state = e;
+            {d, 1'b0}:  next_state = a;
+            {d, 1'b1}:  next_state = f;
+            {e, 1'b0}:  next_state = d;
+            {e, 1'b1}:  next_state = e;
+            {f, 1'b0}:  next_state = d;
+            {f, 1'b1}:  next_state = c;
+            default : next_state = a;
+        endcase
+    end
+    
+    always@(posedge clk) begin
+        if(reset)
+            state <= a;
+        else
+            state <= next_state;
+    end
+    
+    assign z = (state == e || state == f);
+    
+endmodule
+
+// Q2b One hot FSM equations:
+module top_module (
+    input [5:0] y,
+    input w,
+    output Y1,
+    output Y3
+  );
+
+    assign Y1 = y[0] & w;
+    assign Y3 = (y[1] & (~w)) | (y[2] & (~w)) | (y[4] & (~w)) | (y[5] & (~w));
+    
+endmodule
+
+//Q2a FSM:
+module top_module (
+    input clk,
+    input resetn,    // active-low synchronous reset
+    input [3:1] r,   // request
+    output [3:1] g   // grant
+  ); 
+
+    parameter a=2'd0, b=2'd1, c=2'd2, d=2'd3;
+    reg [1:0] state, next_state;
+    
+    always@(*) begin
+        case(state)
+            a: begin
+                if(r[1])    next_state = b;
+                else if(~r[1] & r[2])   next_state = c;
+                else if(~r[1] & ~r[2] & r[3])   next_state = d;
+                else    next_state = a;
+            end
+            b: begin
+                if(r[1])    next_state = b;
+                else        next_state = a;
+            end
+            c: begin
+                if(r[2])    next_state = c;
+                else        next_state = a;
+            end
+            d: begin
+                if(r[3])    next_state = d;
+                else        next_state = a;
+            end
+        endcase
+    end
+
+    always@(posedge clk) begin
+        if(~resetn)
+            state <= a;
+        else
+            state <= next_state;
+    end
+    
+    assign g[1] = (state == b);
+    assign g[2] = (state == c);
+    assign g[3] = (state == d);
+endmodule
+
+// Q2b Another FSM:
+module top_module (
+    input clk,
+    input resetn,    // active-low synchronous reset
+    input x,
+    input y,
+    output reg f,
+    output reg g
+); 
+
+    parameter A=4'd0, f1=4'd1, tmp0=4'd2, tmp1=4'd3, tmp2=4'd4, g1=4'd5, g1p=4'd6, tmp3=4'd7, g0p=4'd8;
+    reg [3:0] state, next_state;
+    
+    always@(*) begin
+        case(state)
+            A: begin
+                if(resetn) 
+                    next_state = f1;
+                else
+                    next_state = A;
+            end
+            f1:     next_state = tmp0;
+            tmp0: begin
+                if(x)
+                    next_state = tmp1;
+                else
+                    next_state = tmp0;
+            end
+            tmp1: begin
+                if(~x)
+                    next_state = tmp2;
+                else
+                    next_state = tmp1;
+            end
+            tmp2: begin
+                if(x)
+                    next_state = g1;
+                else
+                    next_state = tmp0;
+            end
+            g1: begin
+                if(y)
+                    next_state = g1p;
+                else
+                    next_state = tmp3;
+            end
+            tmp3: begin
+                if(y)
+                    next_state = g1p;
+                else
+                    next_state = g0p;
+            end
+            g1p: begin
+                if(~resetn)
+                    next_state = A;
+                else
+                    next_state = g1p;
+            end
+            g0p: begin
+                if(~resetn)
+                    next_state = A;
+                else
+                    next_state = g0p;
+            end
+        endcase
+    end
+    
+    always@(posedge clk) begin
+        if(~resetn)
+            state <= A;
+        else
+            state <= next_state;
+    end
+    
+    always@(posedge clk) begin
+        case(next_state)
+            f1:     f <= 1'b1;
+            g1:		g <= 1'b1;
+            tmp3:	g <= 1'b1;
+            g1p:    g <= 1'b1;
+            g0p:    g <= 1'b0;
+            default: begin
+                    f <= 1'b0;
+                    g <= 1'b0;
+            end
+        endcase
+    end
+
+endmodule
